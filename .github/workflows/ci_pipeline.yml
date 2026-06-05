@@ -11,35 +11,18 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    # 1. Pull the fresh multi-engine tree hierarchy from GitHub storage
     - name: Checkout Code Repository
       uses: actions/checkout@v4
 
-    # 2. Deploy standard Python execution environments
     - name: Set up Python 3.10
       uses: actions/setup-python@v5
       with:
         python-version: '3.10'
 
-    # 3. Comprehensive Multi-Engine abstract syntax verification loop
-    - name: Validate Multi-Engine Matrix and Syntax Trees
+    - name: Validate Code Syntax Trees
       run: |
-        echo "⚙️ Running static abstract syntax analysis over all code bases..."
-        
-        # Validate Shared Database Profiles & JSON Routing rules Geometry
+        echo "⚙️ Running pure static analysis over multi-backend unified expert layers..."
         python -m json.tool data/routing_rules.json
-        python -c "import ast; ast.parse(open('data/base_knowledge.py', encoding='utf-8').read()); print('✅ Shared Knowledge Matrix syntax verified.')"
-        
-        # Validate Engine 1 (PyTorch Modern Stack for Windows / Radeon GPU)
-        python -c "import ast; ast.parse(open('engine_pytorch_modern/run_vector.py', encoding='utf-8').read()); print('✅ PyTorch Training Engine syntax verified.')"
-        python -c "import ast; ast.parse(open('engine_pytorch_modern/ask_expert.py', encoding='utf-8').read()); print('✅ PyTorch Runtime Server syntax verified.')"
-        
-        # Validate Engine 2 (TensorFlow Legacy Stack for Production RHEL 9.6)
-        python -c "import ast; ast.parse(open('engine_tensorflow_legacy/run_vector.py', encoding='utf-8').read()); print('✅ TensorFlow Training Engine syntax verified.')"
-        python -c "import ast; ast.parse(open('engine_tensorflow_legacy/ask_expert.py', encoding='utf-8').read()); print('✅ TensorFlow Runtime Server syntax verified.')"
-
-    # 4. Global Repository Sign-off Verification
-    - name: Repository Integrity Sign-off
-      run: |
-        echo "🚀 Multi-Engine architecture verified successfully."
-        echo "🔒 All layers are compilation-safe and optimized for production deployment branches."
+        python -c "import ast; ast.parse(open('data/base_knowledge.py', encoding='utf-8').read()); print('✅ base_knowledge.py check passed.')"
+        python -c "import ast; ast.parse(open('run_vector.py', encoding='utf-8').read()); print('✅ run_vector.py check passed.')"
+        python -c "import ast; ast.parse(open('ask_expert.py', encoding='utf-8').read()); print('✅ ask_expert.py check passed.')"
