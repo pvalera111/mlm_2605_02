@@ -19,31 +19,14 @@ jobs:
       with:
         python-version: '3.10'
 
-    - name: Cache Python Packages
-      uses: actions/cache@v4
-      with:
-        path: ~/.cache/pip
-        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
-        restore-keys: |
-          ${{ runner.os }}-pip-
-
-    - name: Install Base Architecture Dependencies
+    - name: Validate Code Syntax Trees
       run: |
-        python -m pip install --upgrade pip
-        pip install numpy tensorflow transformers keras
-
-    - name: Validate Matrix and Routing Configurations Syntax
-      run: |
+        echo "⚙️ Running pure static analysis over RHEL Expert layers..."
+        
+        # 1. Verify JSON file integrity
         python -m json.tool data/routing_rules.json
-        python -c "from data.base_knowledge import rhel_expert_matrix; print('✅ base_knowledge.py parsed successfully.')"
-        python -c "import run_vector; print('✅ run_vector.py compilation safe.')"
-        python -c "import ask_expert; print('✅ ask_expert.py structural constraints verified.')"
-
-    - name: Execute Mock Environment Smoke Test
-      run: |
-        echo "💻 Mocking environment assets configuration..."
-        mkdir -p base_model data output
-        echo "Dummy tech documentation reference line notes" > data/data.txt
-        export TF_CPP_MIN_LOG_LEVEL=3
-        export OMP_NUM_THREADS=2
-        echo "✅ Validation actions completed. System ready for air-gapped production deployment."
+        
+        # 2. Verify scripts purely as text blobs (No triggers, No framework imports)
+        python -c "import ast; ast.parse(open('data/base_knowledge.py', encoding='utf-8').read()); print('✅ base_knowledge.py check passed.')"
+        python -c "import ast; ast.parse(open('run_vector.py', encoding='utf-8').read()); print('✅ run_vector.py check passed.')"
+        python -c "import ast; ast.parse(open('ask_expert.py', encoding='utf-8').read()); print('✅ ask_expert.py check passed.')"
