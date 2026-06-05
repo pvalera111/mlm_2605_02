@@ -1,4 +1,3 @@
-numpy
-tensorflow>=2.10.0
-transformers
-keras
+torch
+transformers>=4.40.0
+numpy>=1.26.0
