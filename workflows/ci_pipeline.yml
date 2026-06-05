@@ -19,10 +19,14 @@ jobs:
       with:
         python-version: '3.10'
 
-    - name: Validate Python Syntax and JSON Mapping
+    - name: Validate Code Syntax Trees
       run: |
-        echo "⚙️ Running static analysis over RHEL Expert layers..."
+        echo "⚙️ Running pure static analysis over RHEL Expert layers..."
+        
+        # 1. Verify JSON file integrity
         python -m json.tool data/routing_rules.json
-        python -c "import ast; ast.parse(open('data/base_knowledge.py').read()); print('✅ base_knowledge.py syntax is perfect.')"
-        python -c "import ast; ast.parse(open('run_vector.py').read()); print('✅ run_vector.py syntax is perfect.')"
-        python -c "import ast; ast.parse(open('ask_expert.py').read()); print('✅ ask_expert.py syntax is perfect.')"
+        
+        # 2. Verify scripts purely as text blobs (No triggers, No framework imports)
+        python -c "import ast; ast.parse(open('data/base_knowledge.py', encoding='utf-8').read()); print('✅ base_knowledge.py check passed.')"
+        python -c "import ast; ast.parse(open('run_vector.py', encoding='utf-8').read()); print('✅ run_vector.py check passed.')"
+        python -c "import ast; ast.parse(open('ask_expert.py', encoding='utf-8').read()); print('✅ ask_expert.py check passed.')"
