@@ -41,10 +41,8 @@ jobs:
       run: |
         python -m json.tool data/routing_rules.json
         python -c "from data.base_knowledge import rhel_expert_matrix; print('✅ base_knowledge.py parsed successfully.')"
-        python -c "import ast; ast.parse(open('run_vector.py').read()); print('✅ run_vector.py syntax verified.')"
-        python -c "import ast; ast.parse(open('ask_expert.py').read()); print('✅ ask_expert.py syntax verified.')"
-
-
+        python -c "import ast; ast.parse(open('run_vector.py').read())"
+        python -c "import ast; ast.parse(open('ask_expert.py').read())"
 
     # 6. Mock initialization test to ensure environment variables and classes load perfectly
     - name: Execute Mock Environment Smoke Test
