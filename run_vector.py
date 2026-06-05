@@ -212,7 +212,7 @@ def train_matrix_expert():
         mask_arr = (rand < 0.15) * (input_ids != tokenizer.cls_token_id) * \
                    (input_ids != tokenizer.sep_token_id) * (input_ids != tokenizer.pad_token_id)
         
-        for r_idx in range(input_ids.shape): 
+         for r_idx in range(input_ids.shape[0]): 
             input_ids[r_idx, np.argwhere(mask_arr[r_idx]).flatten()] = tokenizer.mask_token_id
             
         labels[~mask_arr] = -100
