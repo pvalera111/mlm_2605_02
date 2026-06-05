@@ -11,18 +11,25 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+    # 1. Pull the fresh repository unified code layout from GitHub storage
     - name: Checkout Code Repository
       uses: actions/checkout@v4
 
+    # 2. Deploy standard Python execution environments
     - name: Set up Python 3.10
       uses: actions/setup-python@v5
       with:
         python-version: '3.10'
 
-    - name: Validate Code Syntax Trees
+    # 3. Comprehensive multi-backend unified abstract syntax verification loop
+    - name: Validate Unified Architecture Syntax and JSON Mapping
       run: |
-        echo "⚙️ Running pure static analysis over multi-backend unified expert layers..."
+        echo "⚙️ Running static abstract syntax analysis over unified repository layers..."
+        
+        # Validate Shared Database Profiles & JSON Routing rules Geometry
         python -m json.tool data/routing_rules.json
-        python -c "import ast; ast.parse(open('data/base_knowledge.py', encoding='utf-8').read()); print('✅ base_knowledge.py check passed.')"
-        python -c "import ast; ast.parse(open('run_vector.py', encoding='utf-8').read()); print('✅ run_vector.py check passed.')"
-        python -c "import ast; ast.parse(open('ask_expert.py', encoding='utf-8').read()); print('✅ ask_expert.py check passed.')"
+        
+        # Verify Python Syntax Trees using built-in abstract syntax compiler (No framework imports triggered)
+        python -c "import ast; ast.parse(open('data/base_knowledge.py', encoding='utf-8').read()); print('✅ Shared Knowledge Matrix syntax verified.')"
+        python -c "import ast; ast.parse(open('run_vector.py', encoding='utf-8').read()); print('✅ Unified Multi-Backend Training Core syntax verified.')"
+        python -c "import ast; ast.parse(open('ask_expert.py', encoding='utf-8').read()); print('✅ Unified Multi-Backend Runtime Server syntax verified.')"
