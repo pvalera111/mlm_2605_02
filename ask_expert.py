@@ -1,9 +1,15 @@
 import os
 import sys
 import json
-import torch
-from transformers import AutoTokenizer, AutoModelForMaskedLM
 import numpy as np
+
+try:
+    import torch
+    from transformers import AutoTokenizer, AutoModelForMaskedLM
+except ImportError:
+    class MockObject: pass
+    torch = MockObject()
+
 import readline
 readline.parse_and_bind("tab: complete")
 
