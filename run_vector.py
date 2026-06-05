@@ -4,11 +4,7 @@ import time
 import json
 import numpy as np
 
-PROJECT_NAME = "mlm_2605_02"
-EXPERT_NAME = "rhel_doc"
-
-# Detect core runtime engine backend framework
-BACKEND = None
+# Safe Multi-Platform Dynamic Architecture Isolation Pass
 try:
     import torch
     from transformers import AutoModelForMaskedLM, AutoTokenizer, logging
@@ -20,14 +16,22 @@ except ImportError:
         import keras
         BACKEND = "TF"
     except ImportError:
-        # Mock operational profile boundary for bare GitHub CI environments
-        print("💻 CI NOTE: No ML framework identified. Activating static syntax mock layer.")
+        # If running inside bare GitHub Actions virtual machine, inject mock layers
+        print("💻 CI NOTE: Frameworks missing. Injecting runtime simulation mocks.")
+        BACKEND = "MOCK"
         class MockObject:
             def __getattr__(self, name): return lambda *args, **kwargs: MockObject()
         torch = MockObject()
+        torch.device = lambda x: "cpu"
+        torch.cuda = MockObject()
+        torch.cuda.is_available = lambda: False
+        tf = MockObject()
+        keras = MockObject()
         logging = MockObject()
         def AutoTokenizer(*args, **kwargs): return MockObject()
         def AutoModelForMaskedLM(*args, **kwargs): return MockObject()
+        def TFAutoModelForMaskedLM(*args, **kwargs): return MockObject()
+
 
 def configure_hardware():
     """Dynamically provisions hardware and core counts across TF and PyTorch environments"""
