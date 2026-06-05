@@ -43,7 +43,6 @@ def configure_hardware():
     if BACKEND == "TORCH":
         if torch.cuda.is_available(): device_name = "CUDA (NVIDIA)"
         elif hasattr(torch.backends, "mps") and torch.backends.mps.is_available(): device_name = "MPS (Apple)"
-        # Note: AMD Radeon cards are handled natively via torch ROCm/DirectML layers as 'cuda' or default devices
     elif BACKEND == "TF":
         if tf.config.list_physical_devices('GPU'): device_name = "GPU (TensorFlow)"
 
@@ -105,7 +104,7 @@ class UnifiedMetricsCallback:
         epoch_duration = time.time() - self.epoch_start_time
         throughput = ((batch + 1) * self.batch_size) / epoch_duration if epoch_duration > 0 else 0
         pulse_char = self.wave_frames[batch % len(self.wave_frames)]
-        sys.stdout.write(f"\r│ Epoch: {self.current_epoch_idx+1:03d}/120 │ Loss: {current_loss:7.4f} │ Time: {epoch_duration:6.1f}s │ Speed: {throughput:7.1f} l/s │ RAM: 387.2G │ Progress: {pulse_char} {batch+1:02d}/{self.total_batches:02d} │ Matrix: RUN   │\033[K")
+        sys.stdout.write(f"\r│ Epoch: {epoch+1:03d}/120 │ Loss: {current_loss:7.4f} │ Time: {epoch_duration:6.1f}s │ Speed: {throughput:7.1f} l/s │ RAM: 387.2G │ Progress: {pulse_char} {batch+1:02d}/{self.total_batches:02d} │ Matrix: RUN   │\033[K")
         sys.stdout.flush()
 
     def on_epoch_end(self, epoch, loss, save_trigger_fn):
@@ -181,18 +180,11 @@ def train_matrix_expert():
             metrics.on_epoch_begin(epoch)
             epoch_loss = 0.0
             for b_idx, (b_in, b_att, b_lab) in enumerate(dataloader):
-        # --- PYTORCH INTRA-EPOCH TRAINING LOOP ITERATION ---
-        for epoch in range(120):
-            metrics.on_epoch_begin(epoch)
-            epoch_loss = 0.0
-            
-            for b_idx, (b_in, b_att, b_lab) in enumerate(dataloader):
                 b_in = b_in.to(target_device)
                 b_att = b_att.to(target_device)
                 b_lab = b_lab.to(target_device)
-                
                 optimizer.zero_grad()
-                loss = model_torch(input_ids=b_in, attention_mask=b_att, labels=b_lab).loss
+                    loss = model_torch(input_ids=b_in, attention_mask=b_att, labels=b_lab).loss
                 loss.backward()
                 optimizer.step()
                 
@@ -238,7 +230,6 @@ def train_matrix_expert():
 
         model_tf.fit(tf_dataset, epochs=120, verbose=0, callbacks=[TFCallbackBridge()])
 
-    # Draw table footer layout boundary if target cross-entropy limits weren't broken early
     if not metrics.best_loss <= metrics.target_loss:
         sys.stdout.write(f"└───────────────┴───────────────┴───────────────┴────────────────────┴──────────────┴────────────────────┴───────────────┘\n")
         
