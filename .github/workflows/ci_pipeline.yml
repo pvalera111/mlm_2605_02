@@ -19,14 +19,20 @@ jobs:
       with:
         python-version: '3.10'
 
-    - name: Validate Code Syntax Trees
+    # Static Textual Verification over all Engine Architectures without loading frameworks
+     King-Size Code Grid Validation Layout Pass
+    - name: Validate Python Syntax trees and JSON Mapping
       run: |
-        echo "⚙️ Running pure static analysis over RHEL Expert layers..."
+        echo "⚙️ Running static analysis over Multi-Engine layers..."
         
-        # 1. Verify JSON file integrity
+        # 1. Validate Shared Database Profiles
         python -m json.tool data/routing_rules.json
+        python -c "import ast; ast.parse(open('data/base_knowledge.py', encoding='utf-8').read()); print('✅ Shared Knowledge Matrix syntax verified.')"
         
-        # 2. Verify scripts purely as text blobs (No triggers, No framework imports)
-        python -c "import ast; ast.parse(open('data/base_knowledge.py', encoding='utf-8').read()); print('✅ base_knowledge.py check passed.')"
-        python -c "import ast; ast.parse(open('run_vector.py', encoding='utf-8').read()); print('✅ run_vector.py check passed.')"
-        python -c "import ast; ast.parse(open('ask_expert.py', encoding='utf-8').read()); print('✅ ask_expert.py check passed.')"
+        # 2. Validate Engine 1 (PyTorch Modern Stack)
+        python -c "import ast; ast.parse(open('engine_pytorch_modern/run_vector.py', encoding='utf-8').read()); print('✅ PyTorch Training Core syntax verified.')"
+        python -c "import ast; ast.parse(open('engine_pytorch_modern/ask_expert.py', encoding='utf-8').read()); print('✅ PyTorch Runtime Engine syntax verified.')"
+        
+        # 3. Validate Engine 2 (TensorFlow Legacy Stack)
+        python -c "import ast; ast.parse(open('engine_tensorflow_legacy/run_vector.py', encoding='utf-8').read()); print('✅ TensorFlow Training Core syntax verified.')"
+        python -c "import ast; ast.parse(open('engine_tensorflow_legacy/ask_expert.py', encoding='utf-8').read()); print('✅ TensorFlow Runtime Engine syntax verified.')"
