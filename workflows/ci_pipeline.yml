@@ -41,10 +41,10 @@ jobs:
       run: |
         python -m json.tool data/routing_rules.json
         python -c "from data.base_knowledge import rhel_expert_matrix; print('✅ base_knowledge.py parsed successfully.')"
-        python -c "import ast; ast.parse(open('run_vector.py').read())"
-        python -c "import ast; ast.parse(open('ask_expert.py').read())"
+        python -c "import ast; ast.parse(open('run_vector.py').read()); print('✅ run_vector.py syntax trees verified.')"
+        python -c "import ast; ast.parse(open('ask_expert.py').read()); print('✅ ask_expert.py syntax trees verified.')"
 
-     # 6. Mock initialization test to ensure environment variables and classes load perfectly
+    # 6. Mock initialization test to ensure environment variables and classes load perfectly
     - name: Execute Mock Environment Smoke Test
       env:
         FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
@@ -53,11 +53,10 @@ jobs:
         mkdir -p base_model data output
         echo "Dummy technical documentation reference notes line" > data/data.txt
         
-        # Verify specific structural block presence inside the core runtime code
+        # Static textual verification of core components to bypass Hugging Face framework load limits
         python -c "
         code = open('run_vector.py').read()
         assert 'def load_and_clean_man_pages' in code, 'load_and_clean_man_pages missing'
-        assert 'class TargetLossStopping' in code, 'TargetLossStopping missing'
+        assert 'class StreamMetricsCallback' in code, 'StreamMetricsCallback missing'
         print('✅ Internal core components and pipeline functions verified successfully.')
         "
-
