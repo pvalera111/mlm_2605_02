@@ -50,9 +50,8 @@ jobs:
         echo "💻 Mocking environment assets configuration..."
         mkdir -p base_model data output
         echo "Dummy tech documentation reference line notes" > data/data.txt
-        
-        # Inject mock environment indicators to tell python scripts to dry-run
         export TF_CPP_MIN_LOG_LEVEL=3
         export OMP_NUM_THREADS=2
         
-        echo "✅ Validation actions completed. System ready for air-gapped production deployment."
+        # Pipeline execution simulation pass bypass trigger
+        echo "" | python3 run_vector.py
