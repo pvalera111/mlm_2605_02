@@ -4,7 +4,11 @@ import time
 import json
 import numpy as np
 
+PROJECT_NAME = "mlm_2605_02"
+EXPERT_NAME = "rhel_doc"
+
 # Safe Multi-Platform Dynamic Architecture Isolation Pass
+BACKEND = None
 try:
     import torch
     from transformers import AutoModelForMaskedLM, AutoTokenizer, logging
@@ -16,7 +20,6 @@ except ImportError:
         import keras
         BACKEND = "TF"
     except ImportError:
-        # If running inside bare GitHub Actions virtual machine, inject mock layers
         print("💻 CI NOTE: Frameworks missing. Injecting runtime simulation mocks.")
         BACKEND = "MOCK"
         class MockObject:
@@ -31,7 +34,6 @@ except ImportError:
         def AutoTokenizer(*args, **kwargs): return MockObject()
         def AutoModelForMaskedLM(*args, **kwargs): return MockObject()
         def TFAutoModelForMaskedLM(*args, **kwargs): return MockObject()
-
 
 def configure_hardware():
     """Dynamically provisions hardware and core counts across TF and PyTorch environments"""
@@ -50,10 +52,9 @@ def configure_hardware():
     elif BACKEND == "TF":
         if tf.config.list_physical_devices('GPU'): device_name = "GPU (TensorFlow)"
 
-    print(f"│ 🚀 Active Framework  : Engine linked via [{BACKEND if BACKEND else 'MOCK'}]. Target Device profile: [{device_name}].               │")
+    print(f"│ 🚀 Active Framework  : Engine linked via [{BACKEND}]. Target Device profile: [{device_name}].               │")
     print(f"└───────────────┴───────────────┴───────────────┴────────────────────┴──────────────┴────────────────────┴───────────────┘")
     
-    # Setup thread pools for CPU allocations
     if device_name == "CPU":
         print(f"\nSpecify compute allocation (Suggested safe capacity for this server: {suggested_cores} threads)")
         user_threads = input(f"Enter thread count [1-{available_cores}] (Default {suggested_cores}): ").strip()
@@ -74,7 +75,7 @@ def configure_hardware():
             tf.config.optimizer.set_jit(True)
         print(f"\n🚀 HARDWARE CONFIG: Execution targeted directly to hardware accelerator: [{device_name}]")
 
-if BACKEND:
+if BACKEND and BACKEND != "MOCK":
     logging.set_verbosity_error()
     configure_hardware()
 
@@ -108,7 +109,7 @@ class UnifiedMetricsCallback:
         epoch_duration = time.time() - self.epoch_start_time
         throughput = ((batch + 1) * self.batch_size) / epoch_duration if epoch_duration > 0 else 0
         pulse_char = self.wave_frames[batch % len(self.wave_frames)]
-        sys.stdout.write(f"\r│ Epoch: {epoch+1:03d}/120 │ Loss: {current_loss:7.4f} │ Time: {epoch_duration:6.1f}s │ Speed: {throughput:7.1f} l/s │ RAM: 387.2G │ Progress: {pulse_char} {batch+1:02d}/{self.total_batches:02d} │ Matrix: RUN   │\033[K")
+        sys.stdout.write(f"\r│ Epoch: {self.current_epoch_idx+1:03d}/120 │ Loss: {current_loss:7.4f} │ Time: {epoch_duration:6.1f}s │ Speed: {throughput:7.1f} l/s │ RAM: 387.2G │ Progress: {pulse_char} {batch+1:02d}/{self.total_batches:02d} │ Matrix: RUN   │\033[K")
         sys.stdout.flush()
 
     def on_epoch_end(self, epoch, loss, save_trigger_fn):
@@ -139,7 +140,7 @@ def load_and_clean_man_pages(data_path):
     return clean_lines
 
 def train_matrix_expert():
-    if not BACKEND:
+    if BACKEND == "MOCK":
         print("💻 CI NOTE: Mock validation environment. Halting training trace graph execution.")
         return
         
@@ -187,8 +188,9 @@ def train_matrix_expert():
                 b_in = b_in.to(target_device)
                 b_att = b_att.to(target_device)
                 b_lab = b_lab.to(target_device)
+                
                 optimizer.zero_grad()
-                    loss = model_torch(input_ids=b_in, attention_mask=b_att, labels=b_lab).loss
+                loss = model_torch(input_ids=b_in, attention_mask=b_att, labels=b_lab).loss
                 loss.backward()
                 optimizer.step()
                 
@@ -210,7 +212,7 @@ def train_matrix_expert():
         mask_arr = (rand < 0.15) * (input_ids != tokenizer.cls_token_id) * \
                    (input_ids != tokenizer.sep_token_id) * (input_ids != tokenizer.pad_token_id)
         
-        for r_idx in range(input_ids.shape[0]): 
+        for r_idx in range(input_ids.shape): 
             input_ids[r_idx, np.argwhere(mask_arr[r_idx]).flatten()] = tokenizer.mask_token_id
             
         labels[~mask_arr] = -100
