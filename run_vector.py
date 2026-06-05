@@ -10,14 +10,65 @@ import keras
 PROJECT_NAME = "mlm_2605_02"
 EXPERT_NAME = "rhel_doc"
 
-# --- AGGRESSIVE COMPUTE PROVISIONING FOR RESERVED STANDBY NODES ---
-os.environ["OMP_NUM_THREADS"] = "90"
-os.environ["TF_NUM_INTRA_OP_THREADS"] = "90"
-os.environ["TF_NUM_INTER_OP_THREADS"] = "4"
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
-
 logging.set_verbosity_error()
-tf.config.optimizer.set_jit(True)
+
+def configure_hardware():
+    """Dynamically provisions hardware resources based on user environment discovery"""
+    print(  f"\n┌─────────────────────────────────────────────────────────────────────────────────────────────┐")
+    print(    f"│ 🛠️   HARDWARE PROVISIONING ENGINE ── DETECTING AVAILABLE COMPUTE RESOURCES                   │")
+    print(    f"├─────────────────────────────────────────────────────────────────────────────────────────────┤")
+
+    # Discover CPU limits
+    available_cores = os.cpu_count() or 4
+    suggested_cores = max(1, available_cores - 2)
+    print(    f"│ 💻 CPU Core Topology :   Identifed {available_cores:03d} logical execution threads inside host system.        │")
+
+    # Discover GPU accelerators
+    gpus = tf.config.list_physical_devices('GPU')
+    gpu_available = len(gpus) > 0
+    if gpu_available:
+        print(f"│ 🚀 GPU Accelerators  :  CUDA Device detected! Hardware acceleration layer is available.     │")
+    else:
+        print(f"│ 🚀 GPU Accelerators  :  No CUDA compatible graphics hardware discovered.                    │")
+    print    (f"└─────────────────────────────────────────────────────────────────────────────────────────────┘")
+
+    # Interactive selection prompt logic
+    print("\nSelect your target training hardware profile:")
+    if gpu_available:
+        print("  [1] GPU Acceleration Profile (Highly Recommended ── Uses Tensor Cores / Mixed Precision)")
+        print(f"  [2] CPU Multi-Threaded Profile (Custom allocation up to {available_cores} threads)")
+        choice = input("Enter choice [1-2] (Default 1): ").strip() or "1"
+    else:
+        print("  [1] CPU Multi-Threaded Profile (Standard Parallel OpenMP Clusters)")
+        choice = "1" if not gpu_available else "2"
+
+    if choice == "1" and gpu_available:
+        # GPU Provisioning parameters activation
+        try:
+            for gpu in gpus:
+                tf.config.experimental.set_memory_growth(gpu, True)
+            from tensorflow.keras import mixed_precision
+            mixed_precision.set_global_policy('mixed_float16')
+            print("\n🚀 HARDWARE CONFIG: GPU acceleration fully provisioned with dynamic VRAM growth restrictions.")
+        except RuntimeError as e:
+            print(f"\n⚠️ GPU Setup Exception: {e}. Falling back onto baseline CPU mappings.")
+    else:
+        # CPU Provisioning parameters activation with dynamic input override flags
+        print(f"\nSpecify compute allocation (Suggested safe capacity for this server: {suggested_cores} threads)")
+        user_threads = input(f"Enter thread count [1-{available_cores}] (Default {suggested_cores}): ").strip()
+        threads = int(user_threads) if user_threads.isdigit() and 1 <= int(user_threads) <= available_cores else suggested_cores
+
+        # Lock environment maps onto targeted thread arrays
+        os.environ["OMP_NUM_THREADS"] = str(threads)
+        os.environ["TF_NUM_INTRA_OP_THREADS"] = str(threads)
+        os.environ["TF_NUM_INTER_OP_THREADS"] = "4"
+        print(f"\n💻 HARDWARE CONFIG: Parallel OpenMP clusters allocated exactly to {threads} dedicated Xeon threads.")
+
+    # Inject XLA JIT optimization pass over the chosen device graph configuration
+    tf.config.optimizer.set_jit(True)
+
+# Run resource calculations before mapping filesystem paths
+configure_hardware()
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__)) if __file__ else "."
 MODEL_DIR = os.path.abspath(os.path.join(BASE_DIR, "base_model"))
@@ -68,7 +119,7 @@ class StreamMetricsCallback(keras.callbacks.Callback):
     def on_epoch_begin(self, epoch, logs=None):
         self.current_epoch_idx = epoch
         self.epoch_start_time = time.time()
-        sys.stdout.write(f"\r│ Epoch: {epoch+1:03d}/120 │ Loss: ------- │ Time: ----.-s │ Speed: -----.- l/s │ RAM: ----.-G │ Progress: ░ 00/{self.total_batches:02d} │ Matrix: INIT  │\033[K")
+        sys.stdout.write(f"\r│ Epoch:{epoch+1:03d}/120 │ Loss: ------- │ Time: ----.-s │ Speed: -----.- l/s │ RAM: ----.-G │ Progress:  ░ 00/{self.total_batches:02d} │ Matrix: INIT  │\033[K")
         sys.stdout.flush()
 
     def on_batch_end(self, batch, logs=None):
@@ -80,8 +131,8 @@ class StreamMetricsCallback(keras.callbacks.Callback):
         pulse_char = self.wave_frames[batch % len(self.wave_frames)]
 
         sys.stdout.write(
-            f"\r│ Epoch: {self.current_epoch_idx+1:03d}/120 │ Loss: {current_loss:7.4f} │ Time: {epoch_duration:6.1f}s │ "
-            f"Speed: {throughput:7.1f} l/s │ RAM: {ram_used:6.1f}G │ Progress: {pulse_char} {batch+1:02d}/{self.total_batches:02d}  │ Matrix: RUN   │\033[K"
+            f"\r│ Epoch:{self.current_epoch_idx+1:03d}/120 │ Loss: {current_loss:7.4f} │ Time: {epoch_duration:6.1f}s │ "
+            f"Speed: {throughput:7.1f} l/s │ RAM: {ram_used:6.1f}G │ Progress:  {pulse_char} {batch+1:02d}/{self.total_batches:02d} │ Matrix: RUN   │\033[K"
         )
         sys.stdout.flush()
 
@@ -100,17 +151,16 @@ class StreamMetricsCallback(keras.callbacks.Callback):
             self.model.save_pretrained(self.save_dir)
             matrix_status = "UPDT"
 
-        # Corrected character boundaries: removed 2 spaces from the Progress column block
         sys.stdout.write(
-            f"\r│ Epoch: {epoch+1:03d}/120 │ Loss: {loss:7.4f} │ Time: {epoch_duration:6.1f}s │ "
+            f"\r│ Epoch:{epoch+1:03d}/120 │ Loss: {loss:7.4f} │ Time: {epoch_duration:6.1f}s │ "
             f"Speed: {throughput:7.1f} l/s │ RAM: {ram_used:6.1f}G │ Progress: █ LOCKED │ Matrix: {matrix_status:4s}  │\033[K\n"
         )
-        sys.stdout.write(f"├────────────────┼───────────────┼───────────────┼────────────────────┼──────────────┼────────────────────┼───────────────┤\n")
+        sys.stdout.write(f"├───────────────┼───────────────┼───────────────┼────────────────────┼──────────────┼────────────────────┼───────────────┤\n")
         sys.stdout.flush()
 
         if loss <= self.target_loss:
-            sys.stdout.write(f"\r└────────────────┴───────────────┴───────────────┴────────────────────┴──────────────┴────────────────────┴───────────────┘\n")
-            print(f"🎯 TARGET ACHIEVED: Loss {loss:.4f} <= {self.target_loss}. Disengaging Xeon cores.")
+            sys.stdout.write(f"\r└───────────────┴───────────────┴───────────────┴────────────────────┴──────────────┴────────────────────┴───────────────┘\n")
+            print(f"🎯 TARGET ACHIEVED: Loss {loss:.4f} <= {self.target_loss}. Disengaging active compute hardware structures.")
             self.model.stop_training = True
 
 def load_and_clean_man_pages(data_path):
@@ -148,27 +198,29 @@ def train_matrix_expert():
     model = TFAutoModelForMaskedLM.from_pretrained(MODEL_DIR, local_files_only=True)
 
     print(f"\n==================================================================================================================")
-    print(f"🚀 INITIATING IN-MEMORY MLM PIPELINE ── ALLOCATED: 90 XEON CORES ── RAM LOCK ACTIVE")
+    print(f"🚀 INITIATING RESOURCE MAPPED IN-MEMORY MLM PIPELINE ── HARDWARE DEVICE CONTEXT COMPILATION ACTIVE")
     print(f"==================================================================================================================")
     print(f"📖 Loaded {total_lines_count} sanitized language lines into volatile memory cache layers.\n")
 
-    # RIGID ALIGNED MASTER GRID BLUEPRINT TOP FRAME BOUNDARY LOCK (Added 1 symbol '─' into structural columns)
-    print(f"┌────────────────┬───────────────┬───────────────┬────────────────────┬──────────────┬────────────────────┬───────────────┐")
-
+    print(f"┌───────────────┬───────────────┬───────────────┬────────────────────┬──────────────┬────────────────────┬───────────────┐")
+    # --- PHASE 4: TENSOR PROCESSING & TRAINING CONVEX GRAPH ---
     inputs = tokenizer(training_texts, max_length=64, padding="max_length", truncation=True, return_tensors="tf")
     input_ids = inputs["input_ids"].numpy()
     labels = input_ids.copy()
 
+    # Generate MLM 15% probability structural masking matrix arrays
     rand = np.random.rand(*input_ids.shape)
     mask_arr = (rand < 0.15) * (input_ids != tokenizer.cls_token_id) * \
                (input_ids != tokenizer.sep_token_id) * (input_ids != tokenizer.pad_token_id)
 
+    # Hard-locked matrix iteration over the integer bounds of the zero-dimension layer array
     for row_idx in range(input_ids.shape[0]):
         selection = np.argwhere(mask_arr[row_idx]).flatten()
         input_ids[row_idx, selection] = tokenizer.mask_token_id
 
     labels[~mask_arr] = -100
 
+    # Build memory cached high-performance training datasets
     tf_dataset = tf.data.Dataset.from_tensor_slices((
         {"input_ids": input_ids, "attention_mask": inputs["attention_mask"]},
         labels
@@ -176,9 +228,11 @@ def train_matrix_expert():
 
     tf_dataset = tf_dataset.cache("").prefetch(buffer_size=tf.data.AUTOTUNE)
 
+    # Graph compiler initialization
     optimizer = keras.optimizers.Adam(learning_rate=5e-5)
     model.compile(optimizer=optimizer)
 
+    # Initialize unified progress stream layout managers
     metrics_callback = StreamMetricsCallback(
         save_dir=OUTPUT_DIR,
         total_lines=total_lines_count,
@@ -186,6 +240,7 @@ def train_matrix_expert():
         target_loss=0.06
     )
 
+    # Execute masked language modeling fitting operation phases
     model.fit(
         tf_dataset,
         epochs=120,
@@ -193,10 +248,12 @@ def train_matrix_expert():
         callbacks=[metrics_callback]
     )
 
+    # Render final closure table border layout if convergence threshold wasn't met early
     if not model.stop_training:
-        sys.stdout.write(f"└─────────────────┴───────────────┴───────────────┴────────────────────┴──────────────┴────────────────────┴───────────────┘\n")
+        sys.stdout.write(f"└───────────────┴───────────────┴───────────────┴────────────────────┴──────────────┴────────────────────┴───────────────┘\n")
         sys.stdout.flush()
 
+    # Freeze neural network layers weights back to production directories
     tokenizer.save_pretrained(OUTPUT_DIR)
     print(f"\n🚀 Pipeline compilation completed. Matrices consolidated at: {OUTPUT_DIR}")
 
