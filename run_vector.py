@@ -201,28 +201,24 @@ def train_matrix_expert():
             if metrics.on_epoch_end(epoch, avg_loss, lambda path: model_torch.save_pretrained(path)): 
                 break
 
-    # --- CONDITIONAL RUNTIME COMPILATION BRANCH: TENSORFLOW ---
+     # --- CONDITIONAL RUNTIME COMPILATION BRANCH: TENSORFLOW ---
     elif BACKEND == "TF":
         model_tf = TFAutoModelForMaskedLM.from_pretrained(MODEL_DIR, local_files_only=True)
         inputs = tokenizer(training_texts, max_length=64, padding="max_length", truncation=True, return_tensors="tf")
         input_ids = inputs["input_ids"].numpy()
         labels = input_ids.copy()
-        
         rand = np.random.rand(*input_ids.shape)
-        mask_arr = (rand < 0.15) * (input_ids != tokenizer.cls_token_id) * \
-                   (input_ids != tokenizer.sep_token_id) * (input_ids != tokenizer.pad_token_id)
+        mask_arr = (rand < 0.15) * (input_ids != tokenizer.cls_token_id) * (input_ids != tokenizer.sep_token_id) * (input_ids != tokenizer.pad_token_id)
         
-         for r_idx in range(input_ids.shape[0]): 
+        # Fixed indent block: exactly 8 spaces for loop, 12 spaces for body
+        for r_idx in range(input_ids.shape[0]): 
             input_ids[r_idx, np.argwhere(mask_arr[r_idx]).flatten()] = tokenizer.mask_token_id
             
         labels[~mask_arr] = -100
 
-        tf_dataset = tf.data.Dataset.from_tensor_slices((
-            {"input_ids": input_ids, "attention_mask": inputs["attention_mask"]}, 
-            labels
-        )).shuffle(1000).batch(64).cache("").prefetch(tf.data.AUTOTUNE)
-        
+        tf_dataset = tf.data.Dataset.from_tensor_slices(({"input_ids": input_ids, "attention_mask": inputs["attention_mask"]}, labels)).shuffle(1000).batch(64).cache("").prefetch(tf.data.AUTOTUNE)
         model_tf.compile(optimizer=keras.optimizers.Adam(learning_rate=5e-5))
+
 
         class TFCallbackBridge(keras.callbacks.Callback):
             def on_epoch_begin(self, epoch, logs=None): 
