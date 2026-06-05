@@ -11,25 +11,18 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    # 1. Checkout the source code from GitHub storage
     - name: Checkout Code Repository
       uses: actions/checkout@v4
 
-    # 2. Setup clean Python runtime environment
     - name: Set up Python 3.10
       uses: actions/setup-python@v5
       with:
         python-version: '3.10'
 
-    # 3. Fast Syntax Check for Production Code Integrity without loading libraries
     - name: Validate Python Syntax and JSON Mapping
       run: |
         echo "⚙️ Running static analysis over RHEL Expert layers..."
-        
-        # Verify JSON Routing configuration file geometry
         python -m json.tool data/routing_rules.json
-        
-        # Verify Python Syntax Trees using built-in abstract syntax compiler (No imports triggered)
         python -c "import ast; ast.parse(open('data/base_knowledge.py').read()); print('✅ base_knowledge.py syntax is perfect.')"
         python -c "import ast; ast.parse(open('run_vector.py').read()); print('✅ run_vector.py syntax is perfect.')"
         python -c "import ast; ast.parse(open('ask_expert.py').read()); print('✅ ask_expert.py syntax is perfect.')"
