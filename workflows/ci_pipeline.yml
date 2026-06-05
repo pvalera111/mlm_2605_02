@@ -19,18 +19,9 @@ jobs:
     - name: Set up Python 3.10
       uses: actions/setup-python@v5
       with:
-        python-module-version: '3.10'
+        python-version: '3.10'
 
-    # 3. Cache python dependencies to speed up subsequent pipeline actions
-    - name: Cache Python Packages
-      uses: actions/cache@v4
-      with:
-        path: ~/.cache/pip
-        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
-        restore-keys: |
-          ${{ runner.os }}-pip-
-
-    # 4. Fast Syntax Check for Production Code Integrity
+    # 3. Fast Syntax Check for Production Code Integrity without loading libraries
     - name: Validate Python Syntax and JSON Mapping
       run: |
         echo "⚙️ Running static analysis over RHEL Expert layers..."
@@ -38,13 +29,7 @@ jobs:
         # Verify JSON Routing configuration file geometry
         python -m json.tool data/routing_rules.json
         
-        # Verify Python Syntax Trees using built-in abstract syntax compiler
+        # Verify Python Syntax Trees using built-in abstract syntax compiler (No imports triggered)
         python -c "import ast; ast.parse(open('data/base_knowledge.py').read()); print('✅ base_knowledge.py syntax is perfect.')"
         python -c "import ast; ast.parse(open('run_vector.py').read()); print('✅ run_vector.py syntax is perfect.')"
         python -c "import ast; ast.parse(open('ask_expert.py').read()); print('✅ ask_expert.py syntax is perfect.')"
-
-    # 5. Repository Integrity Sign-off
-    - name: Final Integrity Verification
-      run: |
-        echo "🚀 All Python code structures and routing tokens compiled successfully."
-        echo "🔒 Architecture is validated and safe for air-gapped datacenter deployment."
