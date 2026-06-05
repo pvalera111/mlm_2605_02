@@ -1,0 +1,10 @@
+{
+  "podman run": ["deploy", "run ", "spawn", "spinup", "nginx"],
+  "podman exec": ["terminal", "exec", "inside", "bash", "enter container"],
+  "bpftrace": ["bpftrace", "ebpf", "bpf script", "syscalls count"],
+  "kprobe_events": ["kprobe", "kretprobe", "do_sys_open", "hook kernel"],
+  "semanage": ["semanage", "restorecon", "fix tags", "context permanently", "lab                                                             el"],
+  "getenforce": ["check selinux", "status mode", "getenforce"],
+  "sed -i": ["sed", "regex", "substitute", "replace inline", "modify file"],
+  "host": ["filter", "host", "port 443", "specific target ip"]
+}
